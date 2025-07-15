@@ -1,0 +1,168 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// NextAuth.js required tables
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?   // For email/password auth
+  role          UserRole  @default(USER)
+  
+  // User identification
+  userId        String    @unique @default(cuid()) // Unique ID for license binding
+  
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  licenses      License[]
+  auditLogs     AuditLog[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// License Management System
+model License {
+  id            String        @id @default(cuid())
+  userId        String        @unique  // Each user can have one license
+  key           String        @unique  // MINIMAX-XXXXXXXXXX format
+  status        LicenseStatus @default(PENDING)
+  createdAt     DateTime      @default(now())
+  activatedAt   DateTime?     // When user first activated the license
+  expiresAt     DateTime?     // When license expires
+  lastUsedAt    DateTime?     // Last time license was used
+  usageCount    Int           @default(0)
+  
+  // Relations
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Removed: auditLogs     AuditLog[]
+}
+
+// Admin System
+model Admin {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  password      String
+  isSuperAdmin  Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+  
+  // Relations
+  auditLogs     AuditLog[]
+}
+
+// Audit Trail System
+model AuditLog {
+  id          String     @id @default(cuid())
+  
+  // Action details
+  action      String     // CREATE_USER, UPDATE_USER, DELETE_USER, ACTIVATE_LICENSE, etc.
+  entityType  String     // USER, LICENSE, ADMIN, etc.
+  entityId    String     // ID of the entity being acted upon
+  
+  // Actor information
+  actorType   ActorType  // USER, ADMIN, SYSTEM
+  userId      String?    // If action by regular user
+  adminId     String?    // If action by admin
+  
+  // Optional details
+  oldValues   String?    // JSON string of old values
+  newValues   String?    // JSON string of new values
+  ipAddress   String?    // IP address of actor
+  userAgent   String?    // User agent of actor
+  details     String?    // Additional details
+  
+  // Timestamp
+  createdAt   DateTime   @default(now())
+  
+  // Relations - removed the restrictive foreign key constraint
+  user        User?      @relation(fields: [userId], references: [id])
+  admin       Admin?     @relation(fields: [adminId], references: [id])
+  // Removed: license     License?   @relation(fields: [entityId], references: [id])
+}
+
+// App Usage Analytics
+model Usage {
+  id            String   @id @default(cuid())
+  userId        String
+  feature       String   // TTS_GENERATION, VOICE_CLONE, etc.
+  details       String?  // JSON string with usage details
+  timestamp     DateTime @default(now())
+  
+  @@index([userId, timestamp])
+}
+
+// Enums
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum LicenseStatus {
+  PENDING     // Created but not activated by user
+  ACTIVE      // Currently valid license
+  EXPIRED     // License has expired
+  REVOKED     // Manually revoked by admin
+  SUSPENDED   // Temporarily suspended
+}
+
+enum ActorType {
+  USER
+  ADMIN
+  SYSTEM
+} 

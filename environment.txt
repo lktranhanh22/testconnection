@@ -1,0 +1,4 @@
+Copy this to your .env file:
+
+# Database
+DATABASE_URL="postgresql://postgres:6KWt1a7lVl2I21wD@db.eaalfzwrrphsdhdrdgjl.supabase.co:5432/postgres" 

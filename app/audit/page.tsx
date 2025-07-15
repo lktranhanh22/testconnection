@@ -25,6 +25,8 @@ async function getAuditLogs() {
   return auditLogs
 }
 
+export const dynamic = 'force-dynamic'
+
 export default async function AuditLogsPage() {
   const auditLogs = await getAuditLogs()
   

@@ -13,6 +13,8 @@ async function getStats() {
   return { userCount, licenseCount, adminCount }
 }
 
+export const dynamic = 'force-dynamic'
+
 export default async function Home() {
   const stats = await getStats()
   

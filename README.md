@@ -2,6 +2,8 @@
 
 Web application admin dashboard sử dụng Next.js, Prisma, và Supabase PostgreSQL để quản lý users, licenses, và audit logs.
 
+<!-- Updated: Added environment variable support -->
+
 ## ✨ Tính năng
 
 - 📊 **Dashboard** - Thống kê tổng quan users, licenses, admins

@@ -1,16 +1,27 @@
 import Link from 'next/link'
 import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL,
+    },
+  },
+})
 
 async function getStats() {
-  const [userCount, licenseCount, adminCount] = await Promise.all([
-    prisma.user.count(),
-    prisma.license.count(),
-    prisma.admin.count(),
-  ])
-  
-  return { userCount, licenseCount, adminCount }
+  try {
+    const [userCount, licenseCount, adminCount] = await Promise.all([
+      prisma.user.count(),
+      prisma.license.count(),
+      prisma.admin.count(),
+    ])
+    
+    return { userCount, licenseCount, adminCount }
+  } catch (error) {
+    console.error('Database error:', error)
+    return { userCount: 0, licenseCount: 0, adminCount: 0 }
+  }
 }
 
 export const dynamic = 'force-dynamic'
